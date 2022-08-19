@@ -26,6 +26,9 @@ from typing import (
 import aiohttp
 
 # Local imports
+from .enums import Status
+from .gateway import *
+from .utils import MISSING
 
 if TYPE_CHECKING:
 	from typing_extensions import Self
@@ -87,7 +90,7 @@ class Client:
 		self._connection: ConnectionState = self._get_state(**options) # I'm not sure I need intents
 		# self._connection.shard_count = self.shard_count
 		self._closed: bool = False
-		self._ready: asyncio.Event: MISSING
+		self._ready: asyncio.Event = MISSING
 		self._application: Optional[AppInfo] = None
 		self._connection._get_websocket = self._get_websocket
 		self._connection._get_client = lambda: self
