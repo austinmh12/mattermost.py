@@ -137,3 +137,10 @@ class KeepAliveHandler(threading.Thread):
 		self.latency = ack_time - self._last_send
 		if self.latency > 10:
 			_log.warning(f'Websocket latency is {self.latency}ms')
+
+class MattermostClientWebSocketResponse(aiohttp.ClientWebSocketResponse):
+	async def close(self, *, code: int = 4000, message: bytes = b'') -> bool:
+		return await super().close(code=code, message=message)
+
+class MattermostWebSocket:
+	"""Implements a WebSocket for Mattermost's gateway v4"""
