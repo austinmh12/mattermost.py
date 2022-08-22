@@ -9,6 +9,7 @@ from typing import (
 	ClassVar,
 	Coroutine,
 	Dict,
+	Iterable,
 	List,
 	NamedTuple,
 	Optional,
@@ -383,3 +384,83 @@ class Ratelimit:
 					else None
 				)
 				self._wake(tokens, exception=exception)
+
+class HTTPClient:
+	"""Represents an HTTP client sending HTTP requests to the Mattermost API."""
+	def __init__(
+		self,
+		loop: asyncio.AbstractEventLoop,
+		connector: Optional[aiohttp.BaseConnector] = None,
+		*,
+		proxy: Optional[str] = None,
+		proxy_auth: Optional[aiohttp.BasicAuth] = None,
+		unsync_clock: bool = True,
+		http_trace: Optional[aiohttp.TraceConfig] = None,
+		max_ratelimit_timeout: Optional[float] = None
+	) -> None:
+		self.loop: asyncio.AbstractEventLoop = loop
+		self.connector: aiohttp.BaseConnector = connector or MISSING
+		self.__session: aiohttp.ClientSession = MISSING # filled with static_login
+		# Route key -> Bucket hash
+		self._bucket_hashes: Dict[str, str] = {}
+		# Bucket Hash + Major Parameters -> Rate limit
+		# or
+		# Route key + Major Parameters -> Rate limit
+		# When the key is the latter, it is used for temporary one shot requests
+		# that don't have a bucket hash
+		# When this reached 256 elements, it will try to evict based off of expiry
+		self._buckets: Dict[str, Ratelimit] = {}
+		self._global_over: asyncio.Event = MISSING
+		self.token: Optional[str] = None
+		self.proxy: Optional[str] = proxy
+		self.proxy_auth: Optional[aiohttp.BasicAuth] = proxy_auth
+		self.http_trace: Optional[aiohttp.TraceConfig] = http_trace
+		self.use_clock: bool = not unsync_clock
+		self.max_ratelimit_timeout: Optional[float] = max(30.0, max_ratelimit_timeout) if max_ratelimit_timeout else None
+		self.user_agent: str = f'MattermostBot (https://github.com/austinmh12/mattermost.py {__version__}) Python/{sys.version_info[0]}.{sys.version_info[1]} aiohttp/{aiohttp.__version__}'
+
+	def clear(self) -> None:
+		if self.__session and self.__session.closed:
+			self.__session = MISSING
+
+	async def ws_connect(self, url: str, *, compress: int = 0) -> aiohttp.ClientWebSocketResponse:
+		...
+
+	def _try_clear_expired_ratelimits(self) -> None:
+		if len(self._buckets) < 256:
+			return
+
+		keys = [key for key, bucket in self._buckets.items() if bucket.is_inactive()]
+		for key in keys:
+			del self._buckets[key]
+
+	def get_ratelimit(self, key: str) -> Ratelimit:
+		...
+
+	async def request(
+		self,
+		route: Route,
+		*,
+		files: Optional[Sequence[File]] = None,
+		form: Optional[Iterable[Dict[str, Any]]] = None,
+		**kwargs: Any
+	) -> Any:
+		...
+
+	async def get_from_cdn(self, url: str) -> bytes:
+		...
+
+	# State management
+	async def close(self) -> None:
+		if self.__session:
+			await self.__session.close()
+
+	# Login management
+	async def static_login(self, url: str, token: str) -> user.User:
+		...
+
+	def logout(self) -> Response[None]:
+		...
+
+	# After this goes all the endpoints but I won't do these until the underlying 
+	# functionality of these are done (e.g. Channels, Teams, Users, etc...)
