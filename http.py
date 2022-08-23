@@ -81,14 +81,14 @@ def handle_message_parameters(
 	flags: MessageFlags = MISSING,
 	file: File = MISSING,
 	files: Sequence[File] = MISSING,
-	embed: Optional[Embed] = MISSING,
-	embeds: Sequence[Embed] = MISSING,
-	attachments: Sequence[Union[Attachment, File]] = MISSING,
-	view: Optional[View] = MISSING,
-	allowed_mentions: Optional[AllowedMentions] = MISSING,
+	# embed: Optional[Embed] = MISSING,
+	# embeds: Sequence[Embed] = MISSING,
+	# attachments: Sequence[Union[Attachment, File]] = MISSING,
+	# view: Optional[View] = MISSING,
+	# allowed_mentions: Optional[AllowedMentions] = MISSING,
 	message_reference: Optional[message.MessageReference], # All message related things will be posts instead
-	stickers: Optional[SnowflakeList] = MISSING, # Need to figure out what Snowflake list is, and I don't think mm does stickers
-	previous_allowed_mentions: Optional[AllowedMentions] = None,
+	# stickers: Optional[SnowflakeList] = MISSING, # Need to figure out what Snowflake list is, and I don't think mm does stickers
+	# previous_allowed_mentions: Optional[AllowedMentions] = None,
 	mention_author: Optional[bool] = None,
 	thread_name: str = MISSING,
 	channel_payload: Dict[str, Any] = MISSING
@@ -96,8 +96,8 @@ def handle_message_parameters(
 	# TODO: Need to look at the payloads for mm api to determine anything that can be removed/changed/added
 	if files is not MISSING and file is not MISSING:
 		raise TypeError('Cannot mix file and files keywords.')
-	if embeds is not MISSING and embed is not MISSING:
-		raise TypeError('Cannot mix embed and embeds keywords.')
+	# if embeds is not MISSING and embed is not MISSING:
+	# 	raise TypeError('Cannot mix embed and embeds keywords.')
 	
 	if file is not MISSING:
 		files = [file]
@@ -106,12 +106,12 @@ def handle_message_parameters(
 		raise TypeError('Cannot mix attachments and files keywords.')
 	
 	payload = {}
-	if embeds is not MISSING:
-		# Handle embeds. This may not be a thing in mm.
-		...
-	if embed is not MISSING:
-		# Handle embed, see above
-		...
+	# if embeds is not MISSING:
+	# 	# Handle embeds. This may not be a thing in mm.
+	# 	...
+	# if embed is not MISSING:
+	# 	# Handle embed, see above
+	# 	...
 	
 	if content is not MISSING:
 		if content is not None:
@@ -119,11 +119,11 @@ def handle_message_parameters(
 		else:
 			payload['content'] = None
 	
-	if view is not MISSING:
-		if view is not None:
-			payload['components'] = view.to_components()
-		else:
-			payload['components'] = []
+	# if view is not MISSING:
+	# 	if view is not None:
+	# 		payload['components'] = view.to_components()
+	# 	else:
+	# 		payload['components'] = []
 		
 	if nonce is not None:
 		payload['nonce'] = str(nonce)
@@ -131,9 +131,9 @@ def handle_message_parameters(
 	if message_reference is not MISSING:
 		payload['message_reference'] = message_reference
 
-	if stickers is not MISSING:
-		# probably not needed
-		...
+	# if stickers is not MISSING:
+	# 	# probably not needed
+	# 	...
 
 	payload['tts'] = tts
 	if avatar_url:
@@ -148,13 +148,13 @@ def handle_message_parameters(
 	if thread_name is not MISSING:
 		payload['thread_name'] = thread_name
 
-	if allowed_mentions:
-		if previous_allowed_mentions is not None:
-			payload['allowed_mentions'] = previous_allowed_mentions.merge(allowed_mentions).to_dict()
-		else:
-			payload['allowed_mentions'] = allowed_mentions.to_dict()
-	elif previous_allowed_mentions is not None:
-		payload['allowed_mentions'] = previous_allowed_mentions.to_dict()
+	# if allowed_mentions:
+	# 	if previous_allowed_mentions is not None:
+	# 		payload['allowed_mentions'] = previous_allowed_mentions.merge(allowed_mentions).to_dict()
+	# 	else:
+	# 		payload['allowed_mentions'] = allowed_mentions.to_dict()
+	# elif previous_allowed_mentions is not None:
+	# 	payload['allowed_mentions'] = previous_allowed_mentions.to_dict()
 
 	if mention_author is not None:
 		if 'allowed_mentions' not in payload:
@@ -177,9 +177,9 @@ def handle_message_parameters(
 				attachments_payload.append(attachment.to_dict())
 		payload['attachments'] = attachments_payload
 
-	if channel_payload is not MISSING:
-		# TODO: Need to figure out what this is
-		...
+	# if channel_payload is not MISSING:
+	# 	# TODO: Need to figure out what this is
+	# 	...
 
 	multipart = []
 	if files:
@@ -225,10 +225,11 @@ class Route:
 		self.url: str = url
 
 		# Major Params:
-		self.channel_id: Optional[Snowflake] = parameters.get('channel_id') # I believe this can stay as channels
-		self.guild_id: Optional[Snowflake] = parameters.get('guild_id') # This may need to change to teams
-		self.webhook_id: Optional[Snowflake] = parameters.get('webhook_id')
-		self.webhook_token: Optional[str] = parameters.get('webhook_token')
+		self._parameters = parameters
+		# self.channel_id: Optional[Snowflake] = parameters.get('channel_id') # I believe this can stay as channels
+		# self.guild_id: Optional[Snowflake] = parameters.get('guild_id') # This may need to change to teams
+		# self.webhook_id: Optional[Snowflake] = parameters.get('webhook_id')
+		# self.webhook_token: Optional[str] = parameters.get('webhook_token')
 
 	@property
 	def key(self) -> str:
@@ -239,9 +240,10 @@ class Route:
 
 	@property
 	def major_parameters(self) -> str:
-		return '+'.join(
-			str(k) for k in (self.channel_id, self.guild_id, self.webhook_id, self.webhook_token) if k is not None
-		)
+		# return '+'.join(
+		# 	str(k) for k in (self.channel_id, self.guild_id, self.webhook_id, self.webhook_token) if k is not None
+		# )
+		return str(self._parameters)
 
 class Ratelimit:
 	"""Represents a Mattermost rate limit"""
