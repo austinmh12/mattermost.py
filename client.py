@@ -30,6 +30,7 @@ from .enums import Status
 from .errors import *
 from .gateway import *
 from .http import HTTPClient
+from .mentions import AllowedMentions
 from . import utils
 from .utils import MISSING
 
