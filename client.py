@@ -27,7 +27,10 @@ import aiohttp
 
 # Local imports
 from .enums import Status
+from .errors import *
 from .gateway import *
+from .http import HTTPClient
+from . import utils
 from .utils import MISSING
 
 if TYPE_CHECKING:
