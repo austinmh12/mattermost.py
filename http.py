@@ -18,15 +18,16 @@ from typing import (
 	TypeVar,
 	Union,
 )
-from urllib.parse import quote as uriquote
+from urllib.parse import quote as _uriquote
 from collections import deque
 import datetime
 
 import aiohttp
 
 # Local imports
+from .errors import HTTPException, RateLimited, Forbidden, NotFound, LoginFailure, MattermostServerError, GatewayNotFound
 from .gateway import MattermostClientWebSocketResponse
-from . import utils
+from . import __version__, utils
 from .utils import MISSING
 
 _log = logging.getLogger(__name__)
@@ -218,7 +219,7 @@ class Route:
 		self.metadata: Optional[str] = metadata
 		url = self.BASE + self.path
 		if parameters:
-			url = url.format_map({k: uriquote(v) if isinstance(v, str) else v for k, v in parameters.items()})
+			url = url.format_map({k: _uriquote(v) if isinstance(v, str) else v for k, v in parameters.items()})
 		self.url: str = url
 
 		# Major Params:
@@ -494,7 +495,7 @@ class HTTPClient:
 		# 	pass
 		# else:
 		# 	if reason:
-		# 		headers['X-Audit-Log-Reason'] = uriquote(reason, safe='/ ')
+		# 		headers['X-Audit-Log-Reason'] = _uriquote(reason, safe='/ ')
 
 		kwargs['headers'] = headers
 
