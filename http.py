@@ -435,7 +435,12 @@ class HTTPClient:
 			del self._buckets[key]
 
 	def get_ratelimit(self, key: str) -> Ratelimit:
-		...
+		try:
+			value = self._buckets[key]
+		except KeyError:
+			self._buckets[key] = value = Ratelimit(self.max_ratelimit_timeout)
+			self._try_clear_expired_ratelimits()
+		return value
 
 	async def request(
 		self,
@@ -445,10 +450,168 @@ class HTTPClient:
 		form: Optional[Iterable[Dict[str, Any]]] = None,
 		**kwargs: Any
 	) -> Any:
-		...
+		method = route.method
+		url = route.url
+		route_key = route.key
+		bucket_hash = None
+		try:
+			bucket_hash = self._bucket_hashes[route_key]
+		except KeyError:
+			key = f'{route.key}:{route.major_parameters}'
+		else:
+			key = f'{bucket_hash}:{route.major_parameters}'
+		
+		ratelimit = self.get_ratelimit(key)
+
+		# Header creation
+		headers: Dict[str, str] = {
+			'User-Agent': self.user_agent
+		}
+
+		if self.token is not None:
+			headers['Authorization'] = f'Bearer {self.token}'
+		# Checking if it's a JSON request
+		if 'json' in kwargs:
+			headers['Content-Type'] = 'application/json'
+			kwargs['data'] = utils._to_json(kwargs.pop('json'))
+		
+		# Not sure what this is or if it's needed
+		# try:
+		# 	reason = kwargs.pop('reason')
+		# except KeyError:
+		# 	pass
+		# else:
+		# 	if reason:
+		# 		headers['X-Audit-Log-Reason'] = uriquote(reason, safe='/ ')
+
+		kwargs['headers'] = headers
+
+		# Proxy support
+		if self.proxy is not None:
+			kwargs['proxy'] = self.proxy
+		if self.proxy_auth is not None:
+			kwargs['proxy_auth'] = self.proxy_auth
+
+		if not self._global_over.is_set():
+			# Wait until the global lock is complete
+			await self._global_over.wait()
+
+		response: Optional[aiohttp.ClientResponse] = None
+		data: Optional[Union[Dict[str, Any], str]] = None
+		async with ratelimit:
+			for tries in range(5):
+				if files:
+					for f in files:
+						f.reset(seek=tries)
+
+				if form:
+					# With quote_fields=True '[' and ']' in file field names are escaped, which discord does not support
+					# TODO: Need to see if this is an issue with Mattermost
+					form_data = aiohttp.FormData(quote_fields=False)
+					for params in form:
+						form_data.add_field(**params)
+					kwargs['data'] = form_data
+
+				try:
+					async with self.__session.request(method, url, **kwargs) as response:
+						_log.debug(f'{method} {url} with {kwargs.get("data")} has returned {response.status}')
+
+						# Errors have text involed so this is safe to call
+						# TODO: Verify if this is the case with Mattermost
+						data = await json_or_text(response)
+
+						# Update and use the rate limit information from the response headers
+						has_ratelimit_headers = 'X-Ratelimit-Remaining' in response.headers
+						# TODO: I don't think the mm api utilizes the self._buckets or self._bucket_hash stuff,
+						# it just sends Limit, Remaining, Reset. Could probably do away with the buckets?
+						if has_ratelimit_headers:
+							if response.status != 429:
+								ratelimit.update(response, use_clock=self.use_clock)
+								if ratelimit.remaining == 0:
+									_log.debug(f'A rate limit bucket ({route_key}) has been exhausted. Pre-emptively rate limiting...')
+
+						# Successful response, just return
+						if 200 <= response.status < 300:
+							_log.debug(f'{method} {url} has received {data}')
+							return data
+
+						# Being rate limited
+						if response.status == 429:
+							if isinstance(data, str):
+								# Not an expected response from the API
+								raise HTTPException(response, data)
+
+							if ratelimit.remaining > 0:
+								# This shouldn't occur as mm doesn't say anything about sub-rate limiting
+								# but I'll put it here just in case
+								_log.debug(f'{method} {url} received a 429 despite having {ratelimit.remaining} requests. This is a sub-ratelimit.')
+
+							retry_after: float = data['retry_after']
+							if self.max_ratelimit_timeout and retry_after > self.max_ratelimit_timeout:
+								_log.warning(f'We are being reate limited. {method} {url} responded with 429. Timeout of {retry_after:.2f} was too long')
+								raise RateLimited(retry_after)
+
+							_log.warning(f'We are being reate limited. {method} {url} responded with 429. Retrying in {retry_after:.2f} seconds.')
+
+							# check if it's a global ratelimit
+							# TODO: I believe all rate-limits will be global, but I'll need to do more investigation
+							is_global = data.get('global', False)
+							if is_global:
+								_log.warning(f'Global rate limit has been hit. Retrying in {retry_after:.2f} seconds.')
+								self._global_over.clear()
+
+							await asyncio.sleep(retry_after)
+							_log.debug('Done sleeping for rate limit. Retrying...')
+
+							# Release the global lock now that the global ratelimit has passed
+							if is_global:
+								self._global_over.set()
+								_log.debug('Global rate limit is now over.')
+
+							continue
+
+						if response.status in (500, 502, 504, 524): # unconditional retry
+							await asyncio.sleep(1 + tries * 2)
+							continue
+
+						# Usual errors
+						if response.status == 403:
+							raise Forbidden(response, data)
+						elif response.status == 404:
+							raise NotFound(response, data)
+						elif response >= 500:
+							raise MattermostServerError(response, data)
+						else:
+							raise HTTPException(response, data)
+
+				except OSError as e:
+					# Connection reset by peer
+					if tries < 4 and e.errno in (54, 10054):
+						await asyncio.sleep(1 + tries * 2)
+						continue
+					raise
+
+			if response is not None:
+				# Out of retries, raise.
+				if response.status >= 500:
+					raise MattermostServerError(response, data)
+
+				raise HTTPException(response, data)
+
+			raise RuntimeError('Unreachable code in HTTP handling')
 
 	async def get_from_cdn(self, url: str) -> bytes:
-		...
+		async with self.__session.get(url) as resp:
+			if resp.status == 200:
+				return await resp.read()
+			elif resp.status == 404:
+				raise NotFound(resp, 'asset not found')
+			elif resp.status == 403:
+				raise Forbidden(resp, 'cannot retrieve asset')
+			else:
+				raise HTTPException(resp, 'failed to get asset')
+
+		raise RuntimeError('Unreachable')
 
 	# State management
 	async def close(self) -> None:
