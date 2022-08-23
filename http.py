@@ -424,7 +424,19 @@ class HTTPClient:
 			self.__session = MISSING
 
 	async def ws_connect(self, url: str, *, compress: int = 0) -> aiohttp.ClientWebSocketResponse:
-		...
+		kwargs = {
+			'proxy_auth': self.proxy_auth,
+			'proxy': self.proxy,
+			'max_msg_size': 0,
+			'timeout': 30.0,
+			'autoclose': False,
+			'headers': {
+				'User-Agent': self.user_agent
+			},
+			'compress': compress
+		}
+
+		return await self.__session.ws_connect(url, **kwargs)
 
 	def _try_clear_expired_ratelimits(self) -> None:
 		if len(self._buckets) < 256:
