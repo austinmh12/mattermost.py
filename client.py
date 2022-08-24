@@ -95,7 +95,7 @@ class Client:
 		# self._connection.shard_count = self.shard_count
 		self._closed: bool = False
 		self._ready: asyncio.Event = MISSING
-		self._application: Optional[AppInfo] = None
+		# self._application: Optional[AppInfo] = None
 		self._connection._get_websocket = self._get_websocket
 		self._connection._get_client = lambda: self
 
@@ -142,9 +142,9 @@ class Client:
 	def teams(self) -> Sequence[Team]:
 		return self._connection.teams
 
-	@property
-	def emojis(self) -> Sequence[Emoji]:
-		return self._connection.emojis
+	# @property
+	# def emojis(self) -> Sequence[Emoji]:
+	# 	return self._connection.emojis
 
 	@property
 	def cached_messages(self) -> Sequence[Message]:
@@ -162,9 +162,9 @@ class Client:
 	def application_flags(self):
 		...
 
-	@property
-	def application(self) -> Optional[AppInfo]:
-		return self._application
+	# @property
+	# def application(self) -> Optional[AppInfo]:
+	# 	return self._application
 
 	def is_ready(self) -> bool:
 		return self._ready is not MISSING and self._ready.is_set()
