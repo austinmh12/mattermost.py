@@ -30,13 +30,11 @@ class AllowedMentions:
 		self,
 		*,
 		everyone: bool = default,
-		users: Union[bool, Sequence[Snowflake]] = default,
-		roles: Union[bool, Sequence[Snowflake]] = default,
+		users: Union[bool, Sequence[str]] = default,
 		replied_user: bool = default
 	) -> None:
 		self.everyone: bool = everyone
-		self.users: Union[bool, Sequence[Snowflake]] = users
-		self.roles: Union[bool, Sequence[Snowflake]] = roles
+		self.users: Union[bool, Sequence[str]] = users
 		self.replied_user: bool = replied_user
 
 	@classmethod

@@ -20,7 +20,7 @@ from typing import (
 
 from .errors import ClientException
 from .file import File
-from .http import handle_message_parameters
+from .http import handle_post_parameters
 from . import utils
 
 __all__ = (
@@ -36,7 +36,13 @@ if TYPE_CHECKING:
 	from .client import Client
 	from .user import ClientUser
 	from .state import ConnectionState
-	from .channel import TextChannel, DMChannel
+	from .channel import TextChannel, DMChannel, PartialPostable
+	from .team import Team
+	from .post import Post, PostReference, PartialPost
+	from .threads import Thread
+
+	PartialPostableChannel = Union[TextChannel, Thread, DMChannel, PartialPostable]
+	# PostableChannel = Union[PartialPostableChannel, GroupChannel]
 
 MISSING = utils.MISSING
 

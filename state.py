@@ -21,14 +21,22 @@ import weakref
 import inspect
 import os
 
-from .enums import Status
-# from .mentions import AllowedMentions
 
 # Local imports
 from . import utils
+from .enums import Status
+# from .mentions import AllowedMentions
+from .team import Team
+from .user import User, ClientUser
+from .post import Post
+from .channel import *
+from .member import Member
 
 
 if TYPE_CHECKING:
+	from .abc import PrivateChannel
+	from .post import PostableChannel
+	from .team import TeamChannel
 	from .client import Client
 	from .gateway import MattermostWebSocket
 	from .http import HTTPClient
@@ -108,9 +116,9 @@ class ConnectionState:
 		# Set after client.login
 		self.loop: asyncio.AbstractEventLoop = utils.MISSING
 		self.http: HTTPClient = http
-		self.max_messages: Optional[int] = options.get('max_messages', 1000)
-		if self.max_messages is not None and self.max_messages <= 0:
-			self.max_messages = 1000
+		self.max_posts: Optional[int] = options.get('max_posts', 1000)
+		if self.max_posts is not None and self.max_posts <= 0:
+			self.max_posts = 1000
 		self.dispatch: Callable[..., Any] = dispatch
 		self.handlers: Dict[str, Callable[..., Any]] = handlers
 		self.hooks: Dict[str, Callable[..., Coroutine[Any, Any, Any]]] = hooks
@@ -165,17 +173,17 @@ class ConnectionState:
 		self.user: Optional[ClientUser] = None
 		self._users: weakref.WeakValueDictionary[str, User] = weakref.WeakValueDictionary()
 		# self._emojis: Dict[int, Emoji] = {}
-		# self._stickers: Dict[int, GuildSticker] = {}
+		# self._stickers: Dict[int, TeamSticker] = {}
 		self._teams: Dict[str, Team] = {} # Teams are equivalent of Discord Guilds and have a str id instead of an int
 		if views:
 			...
 			# self._view_store: ViewStore = ViewStore(self)
 		self._private_channels: OrderedDict[int, PrivateChannel] = OrderedDict()
 		self._private_channel_by_user: Dict[int, DMChannel] = {}
-		if self.max_messages is not None:
-			self._messages: Optional[Deque[Message]] = deque(maxlen=self.max_messages)
+		if self.max_posts is not None:
+			self._posts: Optional[Deque[Post]] = deque(maxlen=self.max_posts)
 		else:
-			self._messages: Optional[Deque[Message]] = None
+			self._posts: Optional[Deque[Post]] = None
 
 	def process_chunk_requests(
 		self,
@@ -255,7 +263,7 @@ class ConnectionState:
 	def _remove_team(self, team: Team) -> None:
 		self._teams.pop(team.id, None)
 
-		# Remove the emojis and stickers for those guilds
+		# Remove the emojis and stickers for those teams
 
 		del team
 

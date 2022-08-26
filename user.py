@@ -10,9 +10,9 @@ if TYPE_CHECKING:
 	from typing_extensions import Self
 	from datetime import datetime
 	from .channel import DMChannel
-	# from .message import Message
+	from .post import Post
 	from .state import ConnectionState
-	# from .team import Team
+	from .team import Team
 
 __all__ = [
 	'User',
@@ -93,11 +93,11 @@ class BaseUser(_UserTag):
 	def display_name(self) -> str:
 		return self.name
 
-	def mentioned_in(self, message: Message) -> bool:
-		if message.mention_everyone:
+	def mentioned_in(self, post: Post) -> bool:
+		if post.mention_everyone:
 			return True
 		
-		return any(user.id == self.id for user in message.mentions)
+		return any(user.id == self.id for user in post.mentions)
 
 class ClientUser(BaseUser):
 	"""Represents your Mattermost user."""
@@ -128,7 +128,7 @@ class ClientUser(BaseUser):
 		data: UserPayload = await self._state.http.edit_profile(payload)
 		return ClientUser(state=self._state, data=data)
 
-class User(BaseUser, mattermost.abc.Messageable):
+class User(BaseUser, mattermost.abc.Postable):
 	__slots__ = ('__weakref__')
 
 	def __repr__(self) -> str:
@@ -150,5 +150,5 @@ class User(BaseUser, mattermost.abc.Messageable):
 			return found
 
 		state = self._state
-		data: DMChannelPayload = await state.http.start_private_message(self.id)
+		data: DMChannelPayload = await state.http.start_private_post(self.id)
 		return state.add_dm_channel(data)

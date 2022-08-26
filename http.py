@@ -71,14 +71,14 @@ class MultipartParameters(NamedTuple):
 			for file in self.files:
 				file.close()
 
-def handle_message_parameters(
+def handle_post_parameters(
 	content: Optional[str] = MISSING,
 	*,
 	username: str = MISSING,
 	avatar_url: Any = MISSING,
 	tts: bool = False,
 	nonce: Optional[Union[int, str]] = None,
-	flags: MessageFlags = MISSING,
+	flags: PostFlags = MISSING,
 	file: File = MISSING,
 	files: Sequence[File] = MISSING,
 	# embed: Optional[Embed] = MISSING,
@@ -86,7 +86,7 @@ def handle_message_parameters(
 	# attachments: Sequence[Union[Attachment, File]] = MISSING,
 	# view: Optional[View] = MISSING,
 	# allowed_mentions: Optional[AllowedMentions] = MISSING,
-	message_reference: Optional[message.MessageReference], # All message related things will be posts instead
+	post_reference: Optional[post.PostReference], # All message related things will be posts instead
 	# stickers: Optional[SnowflakeList] = MISSING, # Need to figure out what Snowflake list is, and I don't think mm does stickers
 	# previous_allowed_mentions: Optional[AllowedMentions] = None,
 	mention_author: Optional[bool] = None,
@@ -128,8 +128,8 @@ def handle_message_parameters(
 	if nonce is not None:
 		payload['nonce'] = str(nonce)
 
-	if message_reference is not MISSING:
-		payload['message_reference'] = message_reference
+	if post_reference is not MISSING:
+		payload['post_reference'] = post_reference
 
 	# if stickers is not MISSING:
 	# 	# probably not needed
@@ -226,9 +226,9 @@ class Route:
 
 		# Major Params:
 		self._parameters = parameters
-		# self.channel_id: Optional[Snowflake] = parameters.get('channel_id') # I believe this can stay as channels
-		# self.guild_id: Optional[Snowflake] = parameters.get('guild_id') # This may need to change to teams
-		# self.webhook_id: Optional[Snowflake] = parameters.get('webhook_id')
+		# self.channel_id: Optional[str] = parameters.get('channel_id') # I believe this can stay as channels
+		# self.team_id: Optional[str] = parameters.get('team_id') # This may need to change to teams
+		# self.webhook_id: Optional[str] = parameters.get('webhook_id')
 		# self.webhook_token: Optional[str] = parameters.get('webhook_token')
 
 	@property
@@ -241,7 +241,7 @@ class Route:
 	@property
 	def major_parameters(self) -> str:
 		# return '+'.join(
-		# 	str(k) for k in (self.channel_id, self.guild_id, self.webhook_id, self.webhook_token) if k is not None
+		# 	str(k) for k in (self.channel_id, self.team_id, self.webhook_id, self.webhook_token) if k is not None
 		# )
 		return str(self._parameters)
 

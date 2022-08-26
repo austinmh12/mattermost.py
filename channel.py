@@ -25,11 +25,13 @@ import mattermost.abc
 from . import utils
 from .utils import MISSING
 from .errors import ClientException
-from .http import handle_message_parameters
+from .http import handle_post_parameters
+from .threads import Thread
 
 __all__ = [
 	'TextChannel',
-	'DMChannel'
+	'DMChannel',
+	'PartialPostable'
 ]
 
 if TYPE_CHECKING:
@@ -37,14 +39,17 @@ if TYPE_CHECKING:
 	from .file import File
 	from .state import ConnectionState
 	from .user import ClientUser, User, BaseUser
+	from .post import Post, PartialPost
+	from .member import Member
+	from .team import Team, TeamChannel as TeamChannelType
 
 	OverwriteKeyT = TypeVar('OverwriteKeyT', BaseUser)
 
-class ThreadWithMessage(NamedTuple):
+class ThreadWithPost(NamedTuple):
 	thread: Thread
-	message: Message
+	post: Post
 
-class TextChannel(mattermost.abc.Messageable, discord.abc.TeamChannel, Hashable):
+class TextChannel(mattermost.abc.Postable, mattermost.abc.TeamChannel, Hashable):
 	__slots__ = (
 		'name',
 		'id',
@@ -52,7 +57,7 @@ class TextChannel(mattermost.abc.Messageable, discord.abc.TeamChannel, Hashable)
 		'_state',
 		'_overwrites',
 		'_type',
-		'_last_message_id'
+		'_last_post_id'
 	)
 
 	def __init__(self, *, state: ConnectionState, team: Team, data: TextChannelPayload) -> None:
@@ -83,7 +88,7 @@ class TextChannel(mattermost.abc.Messageable, discord.abc.TeamChannel, Hashable)
 		...
 
 	@property
-	def last_message(self) -> Optional[Message]:
+	def last_post(self) -> Optional[Post]:
 		...
 
 	@overload
@@ -109,26 +114,26 @@ class TextChannel(mattermost.abc.Messageable, discord.abc.TeamChannel, Hashable)
 
 	# clone
 
-	async def delete_messages(self, messages: Iterable[str], *, reason: Optional[str] = None) -> None:
+	async def delete_posts(self, posts: Iterable[str], *, reason: Optional[str] = None) -> None:
 		...
 
 	async def purge(
 		self,
 		*,
 		limit: Optional[int] = 100,
-		check: Callable[[Message], bool] = MISSING,
+		check: Callable[[Post], bool] = MISSING,
 		before: Optional[datetime.datetime] = None,
 		after: Optional[datetime.datetime] = None,
 		around: Optional[datetime.datetime] = None,
 		oldest_first: Optional[bool] = None,
 		bulk: bool = True,
 		reason: Optional[str] = None
-	) -> List[Message]:
+	) -> List[Post]:
 		...
 
 	# Webhooks and following
 
-	# Partial message stuff
+	# Partial post stuff
 
 	def get_thread(self, thread_id: str, /) -> Optional[Thread]:
 		...
@@ -137,12 +142,12 @@ class TextChannel(mattermost.abc.Messageable, discord.abc.TeamChannel, Hashable)
 		self,
 		*,
 		name: str,
-		message: Optional[str] = None,
+		post: Optional[str] = None,
 		reason: Optional[str] = None
 	) -> Thread:
 		...
 
-class DMChannel(mattermost.abc.Messageable, discord.abc.PrivateChannel, Hashable):
+class DMChannel(mattermost.abc.Postable, mattermost.abc.PrivateChannel, Hashable):
 	__slots__ = ('id', 'recipient', 'me', '_state')
 
 	def __init__(self, *, me: ClientUser, state: ConnectionState, data: DMChannelPayload):
@@ -161,7 +166,7 @@ class DMChannel(mattermost.abc.Messageable, discord.abc.PrivateChannel, Hashable
 		return ''
 
 	@classmethod
-	def _from_message(cls, state: ConnectionState, channel_id: str) -> Self:
+	def _from_post(cls, state: ConnectionState, channel_id: str) -> Self:
 		...
 
 	@property
@@ -176,4 +181,18 @@ class DMChannel(mattermost.abc.Messageable, discord.abc.PrivateChannel, Hashable
 	def created_at(self) -> datetime.datetime:
 		...
 
-	# permissions and partial messages
+	# permissions and partial posts
+class PartialPostable(mattermost.abc.Postable, Hashable):
+	def __init__(self, state: ConnectionState, id: str, team_id: Optional[str] = None, type: Optional[str] = None) -> None:
+		self._state: ConnectionState = state
+		self.id: str = id
+		self.team_id: str = team_id
+		self.type: str = type
+
+	def __repr__(self) -> str:
+		return ''
+
+	async def _get_channel(self) -> PartialPostable:
+		return self
+
+	# TODO: Finish the rest of the skeleton

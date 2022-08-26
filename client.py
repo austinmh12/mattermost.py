@@ -26,17 +26,26 @@ from typing import (
 import aiohttp
 
 # Local imports
+from .user import User, ClientUser
+from .team import Team
+from .channel import PartialPostable
 from .enums import Status
 from .errors import *
 from .gateway import *
 from .http import HTTPClient
 from .mentions import AllowedMentions
+from .state import ConnectionState
 from . import utils
 from .utils import MISSING
 
 if TYPE_CHECKING:
 	from typing_extensions import Self
 	from types import TracebackType
+	from .channel import DMChannel
+	from .team import TeamChannel
+	from .post import Post
+	from .member import Member
+	from .abc import PrivateChannel
 
 __all__ = (
 	'Client'
@@ -115,7 +124,7 @@ class Client:
 			await self.close()
 
 	# internals
-	def _get_websocket(self, team_id: Optional[int] = None, *args) -> MattermostWebSocket:
+	def _get_websocket(self, team_id: Optional[str] = None, *args) -> MattermostWebSocket:
 		return self.ws
 
 	def _get_state(self, **options: Any) -> ConnectionState:
@@ -147,7 +156,7 @@ class Client:
 	# 	return self._connection.emojis
 
 	@property
-	def cached_messages(self) -> Sequence[Message]:
+	def cached_posts(self) -> Sequence[Post]:
 		...
 
 	@property
@@ -156,7 +165,8 @@ class Client:
 
 	@property
 	def application_id(self) -> Optional[int]:
-		return self._connection.application_id
+		# return self._connection.application_id
+		...
 
 	@property
 	def application_flags(self):
@@ -291,6 +301,7 @@ class Client:
 		ws_params = {
 			'initial': True
 		}
+		# TODO: Finish this
 		...
 
 	async def close(self) -> None:
