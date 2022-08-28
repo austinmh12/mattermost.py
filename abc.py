@@ -14,6 +14,8 @@ from typing import (
 	Protocol,
 	Sequence,
 	Union,
+	List,
+	Dict,
 	overload,
 	runtime_checkable
 )
@@ -42,7 +44,7 @@ if TYPE_CHECKING:
 	from .threads import Thread
 
 	PartialPostableChannel = Union[TextChannel, Thread, DMChannel, PartialPostable]
-	# PostableChannel = Union[PartialPostableChannel, GroupChannel]
+	PostableChannel = PartialPostableChannel
 
 MISSING = utils.MISSING
 
