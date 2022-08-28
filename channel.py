@@ -31,7 +31,8 @@ from .threads import Thread
 __all__ = [
 	'TextChannel',
 	'DMChannel',
-	'PartialPostable'
+	'PartialPostable',
+	'GroupChannel'
 ]
 
 if TYPE_CHECKING:
@@ -181,6 +182,9 @@ class DMChannel(mattermost.abc.Postable, mattermost.abc.PrivateChannel, Hashable
 	def created_at(self) -> datetime.datetime:
 		...
 
+class GroupChannel(mattermost.abc.Postable, mattermost.abc.PrivateChannel, Hashable):
+	...
+
 	# permissions and partial posts
 class PartialPostable(mattermost.abc.Postable, Hashable):
 	def __init__(self, state: ConnectionState, id: str, team_id: Optional[str] = None, type: Optional[str] = None) -> None:
@@ -196,3 +200,15 @@ class PartialPostable(mattermost.abc.Postable, Hashable):
 		return self
 
 	# TODO: Finish the rest of the skeleton
+
+def _team_channel_factory(channel_type):
+	...
+
+def _channel_factory(channel_type):
+	...
+
+def _threaded_channel_factory(channel_type):
+	...
+
+def _threaded_team_channel_factory(channel_type):
+	...
