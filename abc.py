@@ -42,6 +42,7 @@ if TYPE_CHECKING:
 	from .team import Team
 	from .post import Post, PostReference, PartialPost
 	from .threads import Thread
+	from .payloads.team import TeamChannel as TeamChannelPayload
 
 	PartialPostableChannel = Union[TextChannel, Thread, DMChannel, PartialPostable]
 	PostableChannel = PartialPostableChannel

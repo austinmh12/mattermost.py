@@ -43,6 +43,7 @@ if TYPE_CHECKING:
 	from .post import Post, PartialPost
 	from .member import Member
 	from .team import Team, TeamChannel as TeamChannelType
+	from .payloads.channel import TextChannel as TextChannelPayload, DMChannel as DMChannelPayload
 
 	OverwriteKeyT = TypeVar('OverwriteKeyT', BaseUser)
 

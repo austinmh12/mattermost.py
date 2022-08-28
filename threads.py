@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 	from .member import Member
 	from .post import Post, PartialPost
 	from .state import ConnectionState
+	from .payloads.threads import Thread as ThreadPayload, ThreadMember as ThreadMemberPayload
 
 class Thread(Postable, Hashable):
 	"""Represents a Mattermost Thread"""
@@ -77,7 +78,7 @@ class Thread(Postable, Hashable):
 	def last_post(self) -> Optional[Post]:
 		...
 
-	async def delete_posts(self, posts: Iterable[str], /, *, reason: Optiona[str] = None) -> None:
+	async def delete_posts(self, posts: Iterable[str], /, *, reason: Optional[str] = None) -> None:
 		...
 
 	async def purge(

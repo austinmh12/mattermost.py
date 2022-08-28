@@ -38,6 +38,12 @@ if TYPE_CHECKING:
 	from .state import ConnectionState
 	from .channel import TextChannel
 	from .user import User
+	from .payloads.post import (
+		Attachment as AttachmentPayload,
+		PartialPost as PartialPostPayload, 
+		Post as PostPayload,
+		PostReference as PostReferencePayload
+	)
 
 __all__ = [
 	# 'Attachment',

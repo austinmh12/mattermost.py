@@ -30,8 +30,9 @@ from .team import Team
 from .user import User, ClientUser
 from .post import Post
 from .channel import *
+from .channel import _channel_factory
 from .member import Member
-
+from .threads import Thread, ThreadMember
 
 if TYPE_CHECKING:
 	from .abc import PrivateChannel
@@ -40,6 +41,12 @@ if TYPE_CHECKING:
 	from .client import Client
 	from .gateway import MattermostWebSocket
 	from .http import HTTPClient
+	from .payloads.channel import DMChannel as DMChannelPayload
+	from .payloads.user import User as UserPayload, PartialUser as PartialUserPayload
+	from .payloads.team import Team as TeamPayload
+	from .payloads.post import Post as PostPayload, PartialPost as PartialPostPayload
+
+	Channel = Union[TeamChannel, PrivateChannel, PartialPostable]
 
 	T = TypeVar('T')
 

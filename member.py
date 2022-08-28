@@ -27,6 +27,12 @@ if TYPE_CHECKING:
 	from .team import Team
 	from .state import ConnectionState
 	from .post import Post
+	from .payloads.member import (
+		Member as MemberPayload,
+		PartialMember as PartialMemberPayload,
+		UserWithMember as UserWithMemberPayload,
+		MemberWithUser as MemberWithUserPayload
+	)
 
 class _ClientStatus:
 	...

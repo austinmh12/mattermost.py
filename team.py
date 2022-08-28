@@ -37,6 +37,7 @@ MISSING = utils.MISSING
 if TYPE_CHECKING:
 	from .channel import TextChannel
 	from .state import ConnectionState
+	from .payloads.team import Team as TeamPayload, TeamChannel as TeamChannelPayload
 
 	TeamChannel = TextChannel
 

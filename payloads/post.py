@@ -26,6 +26,12 @@ class Attachment(TypedDict):
 	height: int
 	has_preview_image: bool
 
+class PostReference(TypedDict, total=False):
+	post_id: str
+	channel_id: str
+	team_id: str
+	fail_if_not_exists: bool
+
 class Post(PartialPost):
 	id: str
 	create_at: datetime

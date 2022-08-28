@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 	from .post import Post
 	from .state import ConnectionState
 	from .team import Team
+	from .payloads.channel import DMChannel as DMChannelPayload
+	from .payloads.user import PartialUser as PartialUserPayload, User as UserPayload
 
 __all__ = [
 	'User',
@@ -39,7 +41,7 @@ class BaseUser(_UserTag):
 		system: bool
 		_state: ConnectionState
 
-	def __init__(self, *, state: ConnectionState, data: Union[UserPayload, PartialUserPyaload]) -> None:
+	def __init__(self, *, state: ConnectionState, data: Union[UserPayload, PartialUserPayload]) -> None:
 		self._state = state
 		self._update(data)
 
